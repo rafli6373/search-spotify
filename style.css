@@ -1,8 +1,16 @@
-body {
+html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  body {
     font-family: 'Poppins', sans-serif;
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
     padding: 1rem;
     box-sizing: border-box;
+    overflow-x: hidden;
   }
   .app-shell {
     position: relative;
@@ -48,7 +56,7 @@ body {
     max-height: min(58vh, 620px);
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(30, 215, 96, 0.8) rgba(255, 255, 255, 0.08);
+    scrollbar-color: rgba(142, 91, 190, 0.82) rgba(36, 25, 74, 0.34);
   }
   #playlist::-webkit-scrollbar {
     width: 8px;
@@ -58,17 +66,17 @@ body {
     border-radius: 999px;
   }
   #playlist::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #1ed760, #13a348);
+    background: linear-gradient(180deg, rgba(191, 78, 181, 0.9), rgba(91, 72, 177, 0.9));
     border: 2px solid transparent;
     border-radius: 999px;
     background-clip: padding-box;
   }
   #playlist::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #5df18b, #1ed760);
+    background: linear-gradient(180deg, rgba(224, 102, 199, 0.96), rgba(119, 94, 211, 0.96));
     background-clip: padding-box;
   }
   body {
-    scrollbar-color: rgba(30, 215, 96, 0.8) rgba(255, 255, 255, 0.08);
+    scrollbar-color: rgba(142, 91, 190, 0.82) rgba(36, 25, 74, 0.34);
     scrollbar-width: thin;
   }
   body::-webkit-scrollbar {
@@ -78,17 +86,21 @@ body {
     background: rgba(8, 15, 26, 0.45);
   }
   body::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #1ed760, #13a348);
+    background: linear-gradient(180deg, rgba(191, 78, 181, 0.9), rgba(91, 72, 177, 0.9));
     border: 2px solid transparent;
     border-radius: 999px;
     background-clip: padding-box;
   }
   body::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #5df18b, #1ed760);
+    background: linear-gradient(180deg, rgba(224, 102, 199, 0.96), rgba(119, 94, 211, 0.96));
     background-clip: padding-box;
   }
   #playlist > div {
     gap: 0.75rem;
+    padding-right: 0.5rem;
+  }
+  #playlist > div button {
+    margin-right: 0.35rem;
   }
   .background-art {
     position: fixed;
@@ -252,6 +264,7 @@ body {
   background: -webkit-linear-gradient(45deg, #02e1ba 0%,#26c9f2 29%,#d911f2 66%,#ffa079 100%);
   background: linear-gradient(45deg, #02e1ba 0%,#26c9f2 29%,#d911f2 66%,#ffa079 100%);
   background-size: 400% 400%;
+  background-attachment: fixed;
   -webkit-animation: Gradient 15s ease infinite;
 -moz-animation: Gradient 15s ease infinite;
 animation: Gradient 15s ease infinite;
@@ -260,7 +273,8 @@ display: flex;
 flex-direction: column;
 align-items: stretch;
 justify-content: space-evenly;
-overflow: hidden;
+overflow-x: hidden;
+overflow-y: auto;
 position: relative; 
 }
 
