@@ -13,6 +13,16 @@ body {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
+  .app-footnote {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 0 0 0.75rem;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.8rem;
+    text-align: center;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+  }
   .logo {
     font-size: 2rem;
     margin-bottom: 1rem;
@@ -96,6 +106,10 @@ body {
     color: #d8ffe4;
   }
   .spotify-modal {
+    width: min(520px, calc(100vw - 1rem)) !important;
+    max-height: calc(100vh - 1rem) !important;
+    padding: 1rem !important;
+    overflow: hidden !important;
     background: rgba(17, 24, 39, 0.78) !important;
     color: #f8fafc !important;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -105,6 +119,8 @@ body {
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45) !important;
   }
   .spotify-modal-title {
+    margin: 0 0 0.75rem !important;
+    font-size: clamp(1.35rem, 4vw, 2rem) !important;
     color: #d8ffe4 !important;
     text-shadow: 0 2px 12px rgba(30, 215, 96, 0.25);
   }
@@ -112,16 +128,16 @@ body {
     color: #e5e7eb !important;
   }
   .spotify-modal-content img {
-    width: min(100%, 360px);
-    max-height: 360px;
+    width: min(100%, 300px);
+    max-height: min(36vh, 260px);
     object-fit: cover;
-    margin: 0 auto 1rem;
+    margin: 0 auto 0.75rem;
     border-radius: 12px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   }
   .spotify-preview {
-    margin: 0 auto 1rem;
-    max-width: 360px;
+    margin: 0 auto 0.75rem;
+    max-width: 300px;
   }
   .spotify-preview p {
     margin: 0 0 0.5rem;
@@ -130,12 +146,13 @@ body {
   }
   .spotify-embed {
     width: 100%;
-    height: 152px;
+    height: 110px;
     border: 0;
     border-radius: 12px;
   }
   .spotify-modal-confirm,
   .spotify-modal-cancel {
+    margin-top: 0.25rem !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
   }
@@ -153,6 +170,15 @@ body {
     }
     .app-shell {
       border-radius: 14px;
+    }
+    .spotify-modal {
+      padding: 0.75rem !important;
+    }
+    .spotify-modal-content img {
+      max-height: 30vh;
+    }
+    .spotify-embed {
+      height: 96px;
     }
     .logo h1 {
       font-size: 1.35rem;

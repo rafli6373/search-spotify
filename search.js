@@ -98,7 +98,7 @@ function showTrackDetail(track) {
       <img src="${escapeHtml(safeHttpsUrl(thumbnail))}" alt="${escapeHtml(title || 'Spotify track')}" class="mb-4">
       <div class="spotify-preview">
         ${embedUrl
-          ? `<iframe class="spotify-embed" src="${escapeHtml(embedUrl)}" title="Spotify player" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`
+          ? `<iframe class="spotify-embed" src="${escapeHtml(embedUrl)}" title="Spotify player" loading="eager" fetchpriority="high" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`
           : '<p>Spotify preview tidak tersedia untuk lagu ini.</p>'}
       </div>
       <p class="font-semibold">Artist:</p>
