@@ -73,7 +73,8 @@ async function getSpotifyToken() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/search?q=<query>&limit=20
-// Cari lagu via Spotify Web API (resmi, gratis, hasil asli Spotify)
+// Cari lagu via iTunes Search API (gratis, tanpa key, tanpa Premium)
+// Catatan: Spotify Web API butuh akun Premium — iTunes adalah alternatif terbaik
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/search', async (req, res) => {
   const query = String(req.query.q || '').trim();
@@ -83,36 +84,31 @@ app.get('/api/search', async (req, res) => {
   if (query.length > 100) return res.status(400).json({ error: 'Query maksimal 100 karakter.' });
 
   try {
-    const token = await getSpotifyToken();
-
-    const url  = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}&market=ID`;
-    const resp = await fetchWithTimeout(url, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }, 10_000);
-
-    if (!resp.ok) {
-      const errBody = await resp.text();
-      throw new Error(`Spotify API error ${resp.status}: ${errBody}`);
-    }
+    const url  = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=${limit}&media=music`;
+    const resp = await fetchWithTimeout(url, {}, 10_000);
+    if (!resp.ok) throw new Error(`iTunes error: ${resp.status}`);
 
     const data   = await resp.json();
-    const tracks = (data.tracks?.items || []).map(t => ({
-      id:         t.id,
-      title:      t.name,
-      artist:     t.artists.map(a => a.name).join(', '),
-      album:      t.album.name,
-      year:       t.album.release_date ? new Date(t.album.release_date).getFullYear() : null,
-      duration:   msToTime(t.duration_ms),
-      thumbnail:  t.album.images?.[0]?.url || '',          // gambar album Spotify HD
-      previewUrl: t.preview_url || null,                    // preview 30 detik Spotify
-      spotifyUrl: t.external_urls?.spotify || null,         // link Spotify → untuk download
-      trackViewUrl: t.external_urls?.spotify || null,
-    }));
+    const tracks = (data.results || [])
+      .filter(r => r.wrapperType === 'track')
+      .map(t => ({
+        id:          t.trackId,
+        title:       t.trackName,
+        artist:      t.artistName,
+        album:       t.collectionName,
+        genre:       t.primaryGenreName,
+        duration:    msToTime(t.trackTimeMillis),
+        year:        t.releaseDate ? new Date(t.releaseDate).getFullYear() : null,
+        thumbnail:   (t.artworkUrl100 || t.artworkUrl60 || '').replace('100x100bb', '600x600bb'),
+        previewUrl:  t.previewUrl || null,
+        spotifyUrl:  null,
+        trackViewUrl: t.trackViewUrl || null,
+      }));
 
     res.json({ success: true, count: tracks.length, results: tracks });
   } catch (err) {
     console.error('[/api/search]', err.message);
-    res.status(500).json({ error: 'Gagal mengambil data dari Spotify.', detail: err.message });
+    res.status(500).json({ error: 'Gagal mengambil data pencarian.', detail: err.message });
   }
 });
 
