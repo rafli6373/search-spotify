@@ -36,24 +36,12 @@ async function searchMusic() {
   playlistDiv.replaceChildren();
 
   try {
-    // Selalu coba backend Spotify dulu → kalau gagal, fallback iTunes
-    let tracks = null;
-    let source  = 'spotify';
-
-    try {
-      tracks = await searchViaBackend(query);
-    } catch (backendErr) {
-      console.warn('[Backend gagal, fallback iTunes]', backendErr.message);
-      tracks = await searchViaiTunes(query);
-      source  = 'itunes';
-    }
+    // Cari langsung via iTunes API — super cepat, tanpa butuh backend / server terpisah
+    const tracks = await searchViaiTunes(query);
 
     if (!tracks || tracks.length === 0) {
       showToast('error', 'Lagu tidak ditemukan. Coba kata kunci lain.');
     } else {
-      if (source === 'itunes') {
-        showToast('warning', '⚠️ Menggunakan data iTunes (backend sedang tidak aktif).');
-      }
       renderPlaylist(tracks);
     }
   } catch (err) {
@@ -96,7 +84,7 @@ async function searchViaiTunes(query) {
     genre:        t.primaryGenreName,
     duration:     msToTime(t.trackTimeMillis),
     year:         t.releaseDate ? new Date(t.releaseDate).getFullYear() : null,
-    thumbnail:    (t.artworkUrl100 || t.artworkUrl60 || '').replace('100x100bb', '300x300bb'),
+    thumbnail:    (t.artworkUrl100 || t.artworkUrl60 || '').replace('100x100bb', '600x600bb'),
     previewUrl:   t.previewUrl   || null,
     spotifyUrl:   null,   // tidak ada di iTunes
     trackViewUrl: t.trackViewUrl || null,
