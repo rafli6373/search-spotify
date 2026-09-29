@@ -1,8 +1,12 @@
 // ─── Konfigurasi ─────────────────────────────────────────────────────────────
-// Lokal  → backend Express di port 3001 (terpisah dari static server)
-// Railway → frontend & backend di server yang sama, pakai path relatif
+// 👇 URL Railway yang sudah di-deploy
+const RAILWAY_URL  = 'https://search-spotify-production.up.railway.app';
+
 const isLocal      = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const BACKEND_URL  = isLocal ? `${location.protocol}//${location.hostname}:3001` : '';
+const isRailway    = location.hostname.includes('railway.app');
+const BACKEND_URL  = isLocal   ? `${location.protocol}//${location.hostname}:3001`
+                   : isRailway ? ''           // Railway: same-origin
+                   :             RAILWAY_URL;  // Vercel: panggil Railway API
 
 const ITUNES_SEARCH = 'https://itunes.apple.com/search';
 const TIMEOUT_MS    = 20000;
