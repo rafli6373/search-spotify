@@ -9,10 +9,10 @@
       <meta property="og:title" content="Spotify Downloader">
       <meta property="og:description" content="Easily download tracks from Spotify">
       <meta property="og:image" content="https://cdn.miftah.biz.id/file/6635257d2d7f6.png">
-      <meta property="og:url" content="https://avaskye.tech">
+      <meta property="og:url" content="https://search-sporify.vercel.app/">
       <meta property="og:type" content="website">
     <title>Spotify Search</title>
-    <link rel="icon" type="png" href="image.png">
+    <link rel="icon" type="image/png" href="image.png">
 	<link rel="preconnect" href="https://open.spotify.com">
 	<link rel="preconnect" href="https://i.scdn.co" crossorigin>
     <link rel="stylesheet" href="style.css">
@@ -28,15 +28,16 @@
 				<img src="https://cdn.simpleicons.org/spotify/1ED760" alt="Spotify logo">
         <h1 class="text-2xl font-semibold text-white">Spotify Search</h1>
       </div>
-	<div class="search-bar flex mb-4">
-        <input id="urlInput" type="text" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 mr-2" placeholder="Enter Spotify Music Title">
-        <button id="fetchButton" class="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg">
+	<div class="search-bar flex mb-2">
+        <input id="urlInput" type="text" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 mr-2" placeholder="Enter Spotify Music Title" aria-label="Search Spotify music" autocomplete="off" maxlength="100">
+        <button id="fetchButton" class="text-black p-2 rounded-lg font-semibold transition-opacity hover:opacity-80 active:opacity-60" style="background-color:#1ED760;" aria-label="Search">
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
     <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
   </svg>
         </button>
       </div>
-      <div id="playlist" class="hidden"></div>
+      <p class="text-xs mb-3" style="color:rgba(255,255,255,0.45);">Tekan Enter atau klik tombol untuk mencari</p>
+      <div id="playlist" class="hidden" role="list" aria-label="Hasil pencarian lagu"></div>
       <div id="loading" class="hidden text-gray-400 mt-4">
         <div class="spinner"></div>
       </div>

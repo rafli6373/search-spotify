@@ -255,10 +255,17 @@ html {
   }
   @media (prefers-color-scheme: dark) {
     body {
-      background-color: #fde047;
       color: #FFFFFF;
     }
-      }
+  }
+  .search-bar input:focus {
+    outline: 2px solid #1ED760;
+    outline-offset: 2px;
+  }
+  .search-bar input:focus-visible {
+    outline: 2px solid #1ED760;
+    outline-offset: 2px;
+  }
 body {
   background: -moz-linear-gradient(45deg, #02e1ba 0%, #26c9f2 29%, #d911f2 66%, #ffa079 100%);
   background: -webkit-linear-gradient(45deg, #02e1ba 0%,#26c9f2 29%,#d911f2 66%,#ffa079 100%);

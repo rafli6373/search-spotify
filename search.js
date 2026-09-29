@@ -62,6 +62,7 @@ function displayPlaylist(tracks) {
   tracks.forEach((track) => {
     const row = document.createElement('div');
     row.className = 'flex items-center py-2 border-b border-gray-700';
+    row.setAttribute('role', 'listitem');
 
     const image = document.createElement('img');
     image.src = safeHttpsUrl(track.thumbnail);
@@ -79,8 +80,10 @@ function displayPlaylist(tracks) {
     info.append(title, artist);
 
     const detailButton = document.createElement('button');
-    detailButton.className = 'ml-auto bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg';
+    detailButton.className = 'ml-auto font-semibold text-black p-2 rounded-lg transition-opacity hover:opacity-80 active:opacity-60';
+    detailButton.style.backgroundColor = '#1ED760';
     detailButton.textContent = 'Detail';
+    detailButton.setAttribute('aria-label', `Detail lagu ${track.title || 'Untitled track'}`);
     detailButton.addEventListener('click', () => showTrackDetail(track));
 
     row.append(image, info, detailButton);
@@ -107,8 +110,8 @@ function showTrackDetail(track) {
       <p>${escapeHtml(duration || 'Unknown')}</p>
     `,
     showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
+    confirmButtonColor: '#1ED760',
+    cancelButtonColor: 'rgba(255,255,255,0.16)',
     confirmButtonText: 'Download',
     cancelButtonText: 'Close',
     customClass: {
