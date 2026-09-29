@@ -23,7 +23,9 @@ app.use(cors());
 app.use(express.json());
 
 // ── Serve frontend statis ─────────────────────────────────────────────────────
-const FRONTEND_DIR = path.join(__dirname, '..');
+// Railway: `node server/index.js` → __dirname = /app/server → parent = /app (root ✅)
+// Lokal:   `node index.js` dari /server → __dirname = /server → parent = root ✅
+const FRONTEND_DIR = path.resolve(__dirname, '..');
 app.use(express.static(FRONTEND_DIR));
 
 // ─────────────────────────────────────────────────────────────────────────────

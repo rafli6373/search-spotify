@@ -1,0 +1,13 @@
+{
+  "name": "search-spotify",
+  "version": "1.0.0",
+  "description": "Spotify Search App – Frontend + Backend",
+  "scripts": {
+    "start": "node server/index.js",
+    "install:server": "cd server && npm install",
+    "postinstall": "cd server && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

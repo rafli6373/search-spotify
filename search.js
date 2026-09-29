@@ -1,8 +1,8 @@
 // ─── Konfigurasi ─────────────────────────────────────────────────────────────
-// Backend lokal (Node.js/Express). Jika backend tidak aktif, fallback ke iTunes.
-const BACKEND_URL  = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? `${window.location.protocol}//${window.location.hostname}:3001`
-  : '';   // Di Vercel: pakai API route relatif (jika ada)
+// Lokal  → backend Express di port 3001 (terpisah dari static server)
+// Railway → frontend & backend di server yang sama, pakai path relatif
+const isLocal      = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const BACKEND_URL  = isLocal ? `${location.protocol}//${location.hostname}:3001` : '';
 
 const ITUNES_SEARCH = 'https://itunes.apple.com/search';
 const TIMEOUT_MS    = 20000;
