@@ -1,16 +1,14 @@
 // ─── Konfigurasi ─────────────────────────────────────────────────────────────
-// Backend Railway → Spotify Web API (search asli) + spottydl (download MP3)
-// Fallback → iTunes Search API (jika backend tidak aktif)
-const RAILWAY_URL  = 'https://search-spotify-production.up.railway.app';
-
-const isLocal      = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const isRailway    = location.hostname.includes('railway.app');
-const BACKEND_URL  = isLocal   ? `${location.protocol}//${location.hostname}:3001`
-                   : isRailway ? ''           // Railway: same-origin
-                   :             RAILWAY_URL;  // Vercel: panggil Railway API
-
+const RAILWAY_URL   = 'https://search-spotify-production.up.railway.app';
 const ITUNES_SEARCH = 'https://itunes.apple.com/search';
 const TIMEOUT_MS    = 20000;
+
+// Tentukan base URL backend berdasarkan environment
+const isLocal    = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const isRailway  = location.hostname.includes('railway.app');
+const BACKEND    = isLocal   ? `${location.protocol}//${location.hostname}:3001`
+                 : isRailway ? ''            // Railway: same-origin
+                 :              RAILWAY_URL; // Vercel / lainnya → panggil Railway
 
 // ─── Elemen DOM ──────────────────────────────────────────────────────────────
 const fetchButton = document.getElementById('fetchButton');
@@ -19,39 +17,15 @@ const urlInput    = document.getElementById('urlInput');
 const loadingDiv  = document.getElementById('loading');
 
 let requestInProgress = false;
-let backendAvailable  = false;   // dicek saat halaman pertama dibuka
-
-// ─── Cek Ketersediaan Backend ────────────────────────────────────────────────
-async function checkBackend() {
-  if (!BACKEND_URL) return false;
-  try {
-    const resp = await fetch(`${BACKEND_URL}/api/health`, { signal: AbortSignal.timeout(3000) });
-    backendAvailable = resp.ok;
-  } catch {
-    backendAvailable = false;
-  }
-  console.log(`[Backend] ${backendAvailable ? '✅ Aktif' : '⚠️ Tidak aktif — menggunakan iTunes API'}`);
-  return backendAvailable;
-}
-checkBackend();
 
 // ─── Event Listeners ─────────────────────────────────────────────────────────
 fetchButton.addEventListener('click', searchMusic);
-urlInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') searchMusic();
-});
+urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchMusic(); });
 
 // ─── Fungsi Utama: Search ─────────────────────────────────────────────────────
 async function searchMusic() {
   const query = urlInput.value.trim();
-
-  if (!query) {
-    return Swal.fire({
-      icon: 'warning',
-      title: 'Kolom kosong!',
-      text: 'Masukkan judul lagu atau nama artis terlebih dahulu.',
-    });
-  }
+  if (!query) return Swal.fire({ icon: 'warning', title: 'Kolom kosong!', text: 'Masukkan judul lagu atau nama artis.' });
   if (query.length > 100) return showToast('error', 'Teks pencarian maksimal 100 karakter.');
   if (requestInProgress)  return;
 
@@ -61,18 +35,24 @@ async function searchMusic() {
   playlistDiv.replaceChildren();
 
   try {
-    let tracks;
+    // Selalu coba backend Spotify dulu → kalau gagal, fallback iTunes
+    let tracks = null;
+    let source  = 'spotify';
 
-    // Gunakan backend jika aktif, fallback iTunes
-    if (backendAvailable && BACKEND_URL) {
+    try {
       tracks = await searchViaBackend(query);
-    } else {
+    } catch (backendErr) {
+      console.warn('[Backend gagal, fallback iTunes]', backendErr.message);
       tracks = await searchViaiTunes(query);
+      source  = 'itunes';
     }
 
     if (!tracks || tracks.length === 0) {
       showToast('error', 'Lagu tidak ditemukan. Coba kata kunci lain.');
     } else {
+      if (source === 'itunes') {
+        showToast('warning', '⚠️ Menggunakan data iTunes (backend sedang tidak aktif).');
+      }
       renderPlaylist(tracks);
     }
   } catch (err) {
@@ -87,35 +67,39 @@ async function searchMusic() {
   }
 }
 
-// ─── Search via Backend (/api/search) ─────────────────────────────────────────
+// ─── Search via Backend Spotify API ──────────────────────────────────────────
 async function searchViaBackend(query) {
-  const resp = await fetchWithTimeout(`${BACKEND_URL}/api/search?q=${encodeURIComponent(query)}`);
-  if (!resp.ok) throw new Error(`Backend error: ${resp.status}`);
+  const resp = await fetchWithTimeout(
+    `${BACKEND}/api/search?q=${encodeURIComponent(query)}`,
+    {},
+    10000
+  );
+  if (!resp.ok) throw new Error(`Backend HTTP ${resp.status}`);
   const data = await resp.json();
+  if (!data.success) throw new Error(data.error || 'Backend error');
   return data.results || [];
 }
 
-// ─── Search via iTunes API (fallback, tanpa backend) ─────────────────────────
+// ─── Search via iTunes API (fallback) ────────────────────────────────────────
 async function searchViaiTunes(query) {
-  const url  = `${ITUNES_SEARCH}?term=${encodeURIComponent(query)}&entity=song&limit=20&media=music`;
-  const resp = await fetchWithTimeout(url);
-  if (!resp.ok) throw new Error(`iTunes error: ${resp.status}`);
+  const resp = await fetchWithTimeout(
+    `${ITUNES_SEARCH}?term=${encodeURIComponent(query)}&entity=song&limit=20&media=music`
+  );
+  if (!resp.ok) throw new Error(`iTunes HTTP ${resp.status}`);
   const data = await resp.json();
-  return (data.results || [])
-    .filter(r => r.wrapperType === 'track')
-    .map(t => ({
-      id:           t.trackId,
-      title:        t.trackName,
-      artist:       t.artistName,
-      album:        t.collectionName,
-      genre:        t.primaryGenreName,
-      duration:     msToTime(t.trackTimeMillis),
-      year:         t.releaseDate ? new Date(t.releaseDate).getFullYear() : null,
-      thumbnail:    (t.artworkUrl100 || t.artworkUrl60 || '').replace('100x100bb', '300x300bb'),
-      previewUrl:   t.previewUrl || null,
-      trackViewUrl: t.trackViewUrl || null,
-      spotifyUrl:   null,   // tidak tersedia via iTunes
-    }));
+  return (data.results || []).filter(r => r.wrapperType === 'track').map(t => ({
+    id:           t.trackId,
+    title:        t.trackName,
+    artist:       t.artistName,
+    album:        t.collectionName,
+    genre:        t.primaryGenreName,
+    duration:     msToTime(t.trackTimeMillis),
+    year:         t.releaseDate ? new Date(t.releaseDate).getFullYear() : null,
+    thumbnail:    (t.artworkUrl100 || t.artworkUrl60 || '').replace('100x100bb', '300x300bb'),
+    previewUrl:   t.previewUrl   || null,
+    spotifyUrl:   null,   // tidak ada di iTunes
+    trackViewUrl: t.trackViewUrl || null,
+  }));
 }
 
 // ─── Render Daftar Lagu ───────────────────────────────────────────────────────
@@ -125,7 +109,6 @@ function renderPlaylist(tracks) {
     row.className = 'flex items-center py-2 border-b border-gray-700';
     row.setAttribute('role', 'listitem');
 
-    // Thumbnail
     const img = document.createElement('img');
     img.src       = track.thumbnail || '';
     img.alt       = `${track.title} cover`;
@@ -133,30 +116,27 @@ function renderPlaylist(tracks) {
     img.loading   = 'lazy';
     img.onerror   = () => { img.style.display = 'none'; };
 
-    // Info
-    const info     = document.createElement('div');
+    const info = document.createElement('div');
     info.className = 'flex-1 min-w-0';
-    const title    = document.createElement('p');
+    const title  = document.createElement('p');
     title.className   = 'font-semibold truncate';
     title.textContent = track.title || 'Untitled';
-    const artist      = document.createElement('p');
+    const artist = document.createElement('p');
     artist.className  = 'text-sm truncate';
     artist.style.color = 'rgba(255,255,255,0.6)';
     artist.textContent = track.artist || 'Unknown Artist';
     info.append(title, artist);
 
-    // Tombol Detail
-    const btn         = document.createElement('button');
-    btn.className     = 'ml-3 flex-shrink-0 font-semibold text-black px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 active:opacity-60 text-sm';
+    const btn = document.createElement('button');
+    btn.className = 'ml-3 flex-shrink-0 font-semibold text-black px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 active:opacity-60 text-sm';
     btn.style.backgroundColor = '#1ED760';
-    btn.textContent   = 'Detail';
+    btn.textContent = 'Detail';
     btn.setAttribute('aria-label', `Detail lagu ${track.title}`);
     btn.addEventListener('click', () => showDetail(track));
 
     row.append(img, info, btn);
     playlistDiv.appendChild(row);
   });
-
   playlistDiv.classList.remove('hidden');
 }
 
@@ -175,9 +155,12 @@ function showDetail(track) {
     trackViewUrl = null,
   } = track;
 
-  const artwork = thumbnail || '';
+  // Tentukan tombol aksi
+  const hasFullDownload = !!spotifyUrl;
+  const confirmText = hasFullDownload ? '⬇ Download MP3'
+                    : previewUrl      ? '⬇ Download Preview'
+                    :                   '🎵 Buka di Spotify';
 
-  // Bagian preview audio
   const audioHtml = previewUrl
     ? `<div class="spotify-preview">
         <audio controls class="w-full rounded-lg" style="height:40px;outline:none;">
@@ -189,20 +172,10 @@ function showDetail(track) {
        </div>`
     : `<p class="spotify-preview" style="font-size:0.82rem;color:rgba(255,255,255,0.45);text-align:center;">Preview tidak tersedia.</p>`;
 
-  // Teks tombol berdasarkan kemampuan
-  let confirmText;
-  if (spotifyUrl && backendAvailable) {
-    confirmText = '⬇ Download MP3';
-  } else if (previewUrl) {
-    confirmText = '⬇ Download Preview';
-  } else {
-    confirmText = '🎵 Buka Apple Music';
-  }
-
   Swal.fire({
     title: escapeHtml(title),
     html: `
-      ${artwork ? `<img src="${escapeHtml(artwork)}" alt="${escapeHtml(title)}" class="mb-3">` : ''}
+      ${thumbnail ? `<img src="${escapeHtml(thumbnail)}" alt="${escapeHtml(title)}" class="mb-3">` : ''}
       ${audioHtml}
       <table style="width:100%;text-align:left;font-size:0.85rem;border-collapse:collapse;margin-top:8px;">
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;white-space:nowrap;">Artis</td><td>${escapeHtml(artist)}</td></tr>
@@ -211,17 +184,12 @@ function showDetail(track) {
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Durasi</td><td>${escapeHtml(String(duration))}</td></tr>
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Tahun</td><td>${escapeHtml(String(year))}</td></tr>
       </table>
-      ${!backendAvailable
-        ? `<p style="font-size:0.72rem;color:rgba(255,200,0,0.7);margin-top:10px;">
-            ⚠️ Backend tidak aktif. Download terbatas pada preview 30 detik.
-           </p>`
-        : ''}
     `,
-    showCancelButton: true,
+    showCancelButton:   true,
     confirmButtonColor: '#1ED760',
-    cancelButtonColor: 'rgba(255,255,255,0.16)',
-    confirmButtonText: confirmText,
-    cancelButtonText: 'Tutup',
+    cancelButtonColor:  'rgba(255,255,255,0.16)',
+    confirmButtonText:  confirmText,
+    cancelButtonText:   'Tutup',
     customClass: {
       popup:         'spotify-modal',
       title:         'spotify-modal-title',
@@ -231,46 +199,34 @@ function showDetail(track) {
     },
   }).then((result) => {
     if (!result.isConfirmed) return;
-
-    if (spotifyUrl && backendAvailable) {
-      downloadFullMP3(spotifyUrl, title, artist);
-    } else if (previewUrl) {
-      triggerDownload(previewUrl, `${artist} - ${title} (preview).m4a`);
-      showToast('success', 'Download preview dimulai!');
-    } else if (trackViewUrl) {
-      window.open(trackViewUrl, '_blank', 'noopener,noreferrer');
-    }
+    if (hasFullDownload)       downloadFullMP3(spotifyUrl, title, artist);
+    else if (previewUrl)       { triggerDownload(previewUrl, `${artist} - ${title} (preview).m4a`); showToast('success', 'Download preview dimulai!'); }
+    else if (trackViewUrl)     window.open(trackViewUrl, '_blank', 'noopener,noreferrer');
   });
 }
 
 // ─── Download Full MP3 via Backend ───────────────────────────────────────────
 async function downloadFullMP3(spotifyUrl, title, artist) {
-  showToast('info', '⏳ Mengunduh MP3... Mohon tunggu beberapa detik.');
+  showToast('info', '⏳ Mengunduh MP3... Mohon tunggu.');
   setLoading(true);
-
   try {
     const resp = await fetchWithTimeout(
-      `${BACKEND_URL}/api/download?url=${encodeURIComponent(spotifyUrl)}`,
-      { method: 'GET' },
-      60000   // download bisa butuh waktu lebih lama
+      `${BACKEND}/api/download?url=${encodeURIComponent(spotifyUrl)}`,
+      {},
+      90000   // download bisa butuh waktu lebih lama
     );
-
     if (!resp.ok) {
-      const errData = await resp.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP ${resp.status}`);
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${resp.status}`);
     }
-
-    // Ambil blob dari response
     const blob     = await resp.blob();
     const filename = `${sanitizeFilename(artist)} - ${sanitizeFilename(title)}.mp3`;
     const blobUrl  = URL.createObjectURL(blob);
-
     triggerDownload(blobUrl, filename);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-
     showToast('success', `✅ Download selesai: ${filename}`);
   } catch (err) {
-    console.error('[Download MP3 Error]', err);
+    console.error('[Download MP3]', err);
     showToast('error', `Gagal download: ${err.message}`);
   } finally {
     setLoading(false);
@@ -279,46 +235,31 @@ async function downloadFullMP3(spotifyUrl, title, artist) {
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 function triggerDownload(url, filename) {
-  const a  = document.createElement('a');
-  a.href   = url;
-  a.download = filename;
-  a.target = '_blank';
-  a.rel    = 'noopener noreferrer';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  document.body.appendChild(a); a.click(); a.remove();
 }
 
 function fetchWithTimeout(url, options = {}, timeoutMs = TIMEOUT_MS) {
   const ctrl = new AbortController();
   const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
-  return fetch(url, { ...options, signal: ctrl.signal })
-    .finally(() => clearTimeout(tid));
+  return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(tid));
 }
 
-function setLoading(show) {
-  loadingDiv.classList.toggle('hidden', !show);
-}
+function setLoading(show)   { loadingDiv.classList.toggle('hidden', !show); }
 
 function showToast(icon, text) {
   Swal.fire({
-    icon,
-    text,
-    position: 'top-end',
-    showConfirmButton: false,
-    timer: icon === 'info' ? 8000 : 3500,
-    timerProgressBar: true,
-    toast: true,
+    icon, text,
+    position: 'top-end', showConfirmButton: false,
+    timer: icon === 'info' ? 10000 : 4000, timerProgressBar: true, toast: true,
   });
 }
 
 function escapeHtml(str) {
   return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
 function sanitizeFilename(str) {
