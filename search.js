@@ -168,16 +168,19 @@ function showDetail(track) {
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Durasi</td><td>${escapeHtml(String(duration))}</td></tr>
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Tahun</td><td>${escapeHtml(String(year))}</td></tr>
       </table>
-      <div style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:8px;">
-        <a href="${escapeHtml(fullDownloadUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,0.08);color:#1ED760;border:1px solid #1ED760;padding:8px 12px;border-radius:8px;font-size:0.85rem;font-weight:600;text-decoration:none;transition:0.2s;" onmouseover="this.style.background='rgba(30,215,96,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;gap:8px;">
+        <a href="${escapeHtml(fullDownloadUrl)}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#1ED760;color:#000;padding:11px 16px;border-radius:10px;font-size:0.92rem;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(30,215,96,0.35);transition:0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
           ⚡ Download Lagu Penuh (Full MP3) ↗
         </a>
+        <p style="font-size:0.75rem;color:rgba(255,255,255,0.45);text-align:center;margin:0;">
+          Unduh versi durasi penuh 320kbps gratis
+        </p>
       </div>
     `,
     showCancelButton:   true,
-    confirmButtonColor: '#1ED760',
+    confirmButtonColor: 'rgba(255,255,255,0.12)',
     cancelButtonColor:  'rgba(255,255,255,0.16)',
-    confirmButtonText:  previewUrl ? '⬇ Download Preview' : 'Tutup',
+    confirmButtonText:  '⬇ Download Preview (30 detik)',
     cancelButtonText:   'Tutup',
     showConfirmButton:  !!previewUrl,
     customClass: {
