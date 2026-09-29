@@ -1,14 +1,15 @@
 // ─── Konfigurasi ─────────────────────────────────────────────────────────────
-const RAILWAY_URL   = 'https://search-spotify-production.up.railway.app';
-const ITUNES_SEARCH = 'https://itunes.apple.com/search';
-const TIMEOUT_MS    = 20000;
+const BACKEND_URL    = 'https://search-spotify-production.up.railway.app';
+const ITUNES_SEARCH  = 'https://itunes.apple.com/search';
+const TIMEOUT_MS     = 20000;
 
 // Tentukan base URL backend berdasarkan environment
 const isLocal    = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const isRender   = location.hostname.includes('onrender.com');
 const isRailway  = location.hostname.includes('railway.app');
-const BACKEND    = isLocal   ? `${location.protocol}//${location.hostname}:3001`
-                 : isRailway ? ''            // Railway: same-origin
-                 :              RAILWAY_URL; // Vercel / lainnya → panggil Railway
+const BACKEND    = isLocal ? `${location.protocol}//${location.hostname}:3001`
+                 : (isRender || isRailway) ? '' // same-origin jika dibuka langsung di Render / Railway
+                 : BACKEND_URL; // Vercel / domain lain
 
 // ─── Elemen DOM ──────────────────────────────────────────────────────────────
 const fetchButton = document.getElementById('fetchButton');
@@ -151,15 +152,10 @@ function showDetail(track) {
     year         = '-',
     thumbnail    = '',
     previewUrl   = null,
-    spotifyUrl   = null,
     trackViewUrl = null,
   } = track;
 
-  // Tentukan tombol aksi
-  const hasFullDownload = !!spotifyUrl;
-  const confirmText = hasFullDownload ? '⬇ Download MP3'
-                    : previewUrl      ? '⬇ Download Preview'
-                    :                   '🎵 Buka di Spotify';
+  const fullDownloadUrl = `https://spotdown.org/en2/search?q=${encodeURIComponent(artist + ' ' + title)}`;
 
   const audioHtml = previewUrl
     ? `<div class="spotify-preview">
@@ -167,7 +163,7 @@ function showDetail(track) {
           <source src="${escapeHtml(previewUrl)}" type="audio/mp4">
         </audio>
         <p style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:4px;text-align:center;">
-          🎵 Preview 30 detik
+          🎵 Preview 30 detik kualitas jernih
         </p>
        </div>`
     : `<p class="spotify-preview" style="font-size:0.82rem;color:rgba(255,255,255,0.45);text-align:center;">Preview tidak tersedia.</p>`;
@@ -184,12 +180,18 @@ function showDetail(track) {
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Durasi</td><td>${escapeHtml(String(duration))}</td></tr>
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Tahun</td><td>${escapeHtml(String(year))}</td></tr>
       </table>
+      <div style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:8px;">
+        <a href="${escapeHtml(fullDownloadUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,0.08);color:#1ED760;border:1px solid #1ED760;padding:8px 12px;border-radius:8px;font-size:0.85rem;font-weight:600;text-decoration:none;transition:0.2s;" onmouseover="this.style.background='rgba(30,215,96,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+          ⚡ Download Lagu Penuh (Full MP3) ↗
+        </a>
+      </div>
     `,
     showCancelButton:   true,
     confirmButtonColor: '#1ED760',
     cancelButtonColor:  'rgba(255,255,255,0.16)',
-    confirmButtonText:  confirmText,
+    confirmButtonText:  previewUrl ? '⬇ Download Preview' : 'Tutup',
     cancelButtonText:   'Tutup',
+    showConfirmButton:  !!previewUrl,
     customClass: {
       popup:         'spotify-modal',
       title:         'spotify-modal-title',
@@ -199,21 +201,23 @@ function showDetail(track) {
     },
   }).then((result) => {
     if (!result.isConfirmed) return;
-    if (hasFullDownload)       downloadFullMP3(spotifyUrl, title, artist);
-    else if (previewUrl)       { triggerDownload(previewUrl, `${artist} - ${title} (preview).m4a`); showToast('success', 'Download preview dimulai!'); }
-    else if (trackViewUrl)     window.open(trackViewUrl, '_blank', 'noopener,noreferrer');
+    if (previewUrl) {
+      triggerDownload(previewUrl, `${sanitizeFilename(artist)} - ${sanitizeFilename(title)} (Preview).m4a`);
+      showToast('success', 'Download preview dimulai!');
+    }
   });
 }
 
 // ─── Download Full MP3 via Backend ───────────────────────────────────────────
-async function downloadFullMP3(spotifyUrl, title, artist) {
-  showToast('info', '⏳ Mengunduh MP3... Mohon tunggu.');
+async function downloadFullMP3(title, artist) {
+  showToast('info', '⏳ Menyiapkan MP3... Mohon tunggu 10-20 detik.');
   setLoading(true);
   try {
+    const params = new URLSearchParams({ title, artist });
     const resp = await fetchWithTimeout(
-      `${BACKEND}/api/download?url=${encodeURIComponent(spotifyUrl)}`,
+      `${BACKEND}/api/download?${params.toString()}`,
       {},
-      90000   // download bisa butuh waktu lebih lama
+      90000   // download bisa butuh waktu proses convert
     );
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
