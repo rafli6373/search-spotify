@@ -1,5 +1,6 @@
 // ─── Konfigurasi ─────────────────────────────────────────────────────────────
-// 👇 URL Railway yang sudah di-deploy
+// Backend Railway → Spotify Web API (search asli) + spottydl (download MP3)
+// Fallback → iTunes Search API (jika backend tidak aktif)
 const RAILWAY_URL  = 'https://search-spotify-production.up.railway.app';
 
 const isLocal      = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
