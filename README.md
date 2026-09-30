@@ -1,126 +1,75 @@
-# 🎵 Spotify Search
+# Spotify Search
 
-![HTML](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
-![CSS](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
-![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white)
+Aplikasi web statis bertema Y2K Mixtape untuk mencari lagu, melihat detail, memutar preview Spotify, dan meminta URL unduhan melalui NexRay. Repo ini tidak membutuhkan backend atau proses build.
 
-Aplikasi web statis untuk mencari lagu Spotify, melihat detail lagu, memutar preview melalui Spotify Embed, dan mengunduh lagu melalui API NexRay.
+**Live demo:** [search-sporify.vercel.app](https://search-sporify.vercel.app/)
 
-🔗 **Live Demo:** [search-sporify.vercel.app](https://search-sporify.vercel.app/)
+## Fitur
 
----
+- Cari lagu berdasarkan judul atau nama artis.
+- Lihat cover, artis, album, durasi, dan tahun rilis.
+- Putar preview melalui Spotify Embed.
+- Siapkan URL unduhan saat detail lagu dibuka, lalu gunakan kembali selama lima menit.
+- Tampilkan status loading, hasil kosong, dan pesan error.
+- Cari dengan tombol Enter dan gunakan layout responsif di berbagai ukuran layar.
 
-## ✨ Fitur
-
-- 🔍 Pencarian lagu berdasarkan judul atau nama artis
-- 🖼️ Menampilkan thumbnail, judul, dan artis dari hasil pencarian
-- 🎵 Dialog detail dengan album artwork, durasi, dan Spotify Embed
-- ▶️ Preview musik langsung melalui Spotify Embed (30 detik)
-- ⬇️ Download melalui endpoint downloader Spotify NexRay
-- 🎨 Tampilan transparan dengan aksen Spotify green dan scrollbar bertema
-- 📱 Responsif untuk HP, tablet, laptop, PC, dan layar besar
-- ⌨️ Keyboard shortcut — tekan **Enter** untuk langsung mencari
-- 🔒 Validasi URL HTTPS dan URL Spotify sebelum download
-- 🛡️ Perlindungan frontend dasar terhadap XSS melalui DOM API dan escaping data
-- ⏱️ Batas pencarian maksimal 100 karakter dan timeout request 15 detik
-
----
-
-## 🗂️ Struktur File
+## Struktur File
 
 ```text
 .
-├── index.html   # Struktur halaman dan dependency CDN
-├── search.js    # Pencarian, detail, preview, dan download
-├── style.css    # Tema visual dan responsive layout
-└── image.png    # Asset favicon
+├── index.html   # Halaman dan dependensi CDN
+├── search.js    # Pencarian, detail, preview, dan unduhan
+├── style.css    # Tema Y2K Mixtape dan layout responsif
+└── image.png    # Favicon
 ```
 
----
+## Menjalankan Lokal
 
-## 🚀 Menjalankan Lokal
+Tidak perlu instalasi dependensi atau build. Jalankan server statis dari folder proyek:
 
-Karena aplikasi ini tidak membutuhkan proses build, file dapat dibuka langsung melalui browser. Untuk hasil yang lebih konsisten, jalankan server lokal sederhana:
-
-**Menggunakan Python:**
 ```bash
 python -m http.server 8000
 ```
 
-**Menggunakan Node.js:**
-```bash
-npx serve .
+Kemudian buka <http://localhost:8000> di browser. Alternatifnya, gunakan server statis seperti `npx serve .`.
+
+## Teknologi
+
+- HTML, CSS, dan vanilla JavaScript
+- Tailwind CSS 2.2 melalui CDN
+- SweetAlert2 untuk dialog dan notifikasi
+- Space Grotesk melalui Google Fonts
+- Vercel untuk hosting statis
+
+## Endpoint API
+
+Pencarian lagu:
+
+```text
+GET https://api.nexray.eu.cc/search/spotify?q=<query>
 ```
 
-Kemudian buka di browser:
-```
-http://localhost:8000
-```
+Pengambilan URL unduhan:
 
----
-
-## 🛠️ Tech Stack
-
-| Teknologi | Keterangan |
-|---|---|
-| HTML5 | Struktur halaman |
-| CSS3 + Tailwind 2 | Styling dan responsive layout |
-| Vanilla JavaScript | Logic pencarian dan download |
-| SweetAlert2 | Modal dialog & notifikasi toast |
-| Poppins (Google Fonts) | Tipografi |
-| Vercel | Hosting & deployment |
-
----
-
-## 🔌 Endpoint API
-
-**Pencarian:**
-```
-GET https://api.nexray.eu.cc/search/spotify?q=<judul lagu>
-```
-
-**Download:**
-```
+```text
 GET https://api.nexray.eu.cc/downloader/spotify?url=<encoded-spotify-track-url>
 ```
 
-Aplikasi mengharapkan respons pencarian dengan hasil pada `result`, dan respons downloader dengan URL audio pada `result.url`.
+Frontend membaca daftar lagu dari `result` pada respons pencarian dan URL audio dari `result.url` pada respons downloader. Timeout pencarian adalah 20 detik, sedangkan timeout downloader 60 detik.
 
----
+## Alur Penggunaan
 
-## 📖 Alur Penggunaan
+1. Masukkan judul lagu atau nama artis.
+2. Tekan Enter atau tombol pencarian.
+3. Pilih Detail untuk melihat metadata dan membuka preview Spotify.
+4. Tekan Unduh Audio untuk memulai unduhan.
 
-1. Masukkan judul lagu atau nama artis pada kolom pencarian
-2. Tekan **Enter** atau klik tombol 🔍 untuk mencari
-3. Pilih **Detail** pada lagu yang diinginkan
-4. Putar preview melalui Spotify Embed
-5. Tekan **Download** jika ingin meminta URL download dari API
+## Catatan
 
----
-
-## 🔐 Catatan Keamanan
-
-Aplikasi ini berjalan di sisi frontend, sehingga endpoint API tetap dapat dilihat oleh pengguna. Untuk deployment publik, disarankan:
-
-- ✅ Gunakan HTTPS
-- ✅ Pasang Cloudflare WAF dan rate limiting
-- ✅ Gunakan backend proxy untuk menyembunyikan detail API dan membatasi request
-- ✅ Tambahkan Content Security Policy dan security headers di hosting
-- ❌ Jangan menyimpan API key atau token rahasia di file JavaScript
-- ❌ Jangan meng-host ulang atau mendistribusikan musik berhak cipta tanpa izin
-
-Validasi di frontend membantu mengurangi risiko, tetapi tidak menggantikan perlindungan server-side.
-
----
-
-## 📝 Catatan Preview
-
-Preview menggunakan Spotify Embed agar pemutaran tidak perlu menunggu proses downloader. Autoplay dapat tetap dibatasi oleh kebijakan browser; pengguna mungkin perlu menekan tombol Play pada player Spotify.
-
----
-
-## 📄 Lisensi
+- Browser harus dapat mengakses NexRay, Spotify Embed, dan CDN yang digunakan. Gangguan atau keterlambatan layanan eksternal dapat memengaruhi fitur terkait.
+- API dipanggil langsung dari browser, sehingga endpoint dapat dilihat pengguna. Jangan menaruh API key atau rahasia di file frontend.
+- URL unduhan diminta saat detail lagu dibuka dan disimpan sementara di memori browser selama lima menit.
+- Browser dapat membatasi autoplay; pengguna mungkin perlu menekan tombol Play pada player Spotify.
+- Unduh hanya konten yang berhak kamu akses. Musik dan merek Spotify adalah milik pemegang hak masing-masing.
 
 © 2026 [Rafli](https://github.com/rafli6373). All rights reserved.
