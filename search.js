@@ -146,7 +146,7 @@ function showDetail(track) {
           width="100%"
           height="80"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
+          loading="eager"
           referrerpolicy="no-referrer-when-downgrade"
           title="Spotify preview for ${escapeHtml(title)}">
         </iframe>
