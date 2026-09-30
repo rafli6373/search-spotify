@@ -129,7 +129,6 @@ function showDetail(track) {
     album = '-',
     duration = '-',
     year = '-',
-    thumbnail = '',
     spotifyUrl = null,
   } = track;
 
@@ -140,6 +139,8 @@ function showDetail(track) {
         <iframe
           class="spotify-embed"
           src="https://open.spotify.com/embed/track/${spotifyTrackId}"
+          width="100%"
+          height="80"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
           referrerpolicy="no-referrer-when-downgrade"
@@ -160,7 +161,6 @@ function showDetail(track) {
   Swal.fire({
     title: escapeHtml(title),
     html: `
-      ${thumbnail ? `<img src="${escapeHtml(thumbnail)}" alt="${escapeHtml(title)}" class="mb-3">` : ''}
       ${previewHtml}
       ${spotifyLink}
       <table style="width:100%;text-align:left;font-size:0.85rem;border-collapse:collapse;margin-top:8px;">
