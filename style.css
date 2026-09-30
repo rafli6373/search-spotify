@@ -890,6 +890,41 @@ body::-webkit-scrollbar {
   display: none;
 }
 
+.swal2-container.swal2-backdrop-show {
+  background: rgba(8, 10, 26, 0.78) !important;
+}
+
+.swal2-popup:not(.spotify-modal) {
+  background: #141831 !important;
+  color: var(--y2k-white) !important;
+  border: 1px solid rgba(81, 232, 255, 0.46) !important;
+  border-radius: 18px !important;
+  box-shadow: 7px 7px 0 rgba(255, 85, 216, 0.24), 0 24px 64px rgba(4, 6, 20, 0.6) !important;
+}
+
+.swal2-popup:not(.spotify-modal) .swal2-title,
+.swal2-popup:not(.spotify-modal) .swal2-html-container {
+  color: var(--y2k-white) !important;
+}
+
+.swal2-popup:not(.spotify-modal) .swal2-confirm:not(.spotify-modal-confirm) {
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: linear-gradient(135deg, var(--y2k-lime), var(--y2k-cyan)) !important;
+  color: var(--y2k-ink) !important;
+  font-weight: 700 !important;
+  box-shadow: 4px 4px 0 rgba(255, 85, 216, 0.32);
+}
+
+.swal2-popup.swal2-toast:not(.spotify-modal) {
+  border-left: 3px solid var(--y2k-cyan) !important;
+  border-radius: 10px !important;
+}
+
+.swal2-timer-progress-bar {
+  background: linear-gradient(90deg, var(--y2k-pink), var(--y2k-cyan)) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
