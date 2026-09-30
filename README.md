@@ -9,7 +9,7 @@ Aplikasi web statis bertema Y2K Mixtape untuk mencari lagu, melihat detail, memu
 - Cari lagu berdasarkan judul atau nama artis.
 - Lihat cover, artis, album, durasi, dan tahun rilis.
 - Putar preview melalui Spotify Embed.
-- Siapkan URL unduhan saat detail lagu dibuka, lalu gunakan kembali selama lima menit.
+- Minta URL unduhan hanya setelah tombol Unduh Audio dipilih; hasilnya disimpan sementara selama lima menit.
 - Tampilkan status loading, hasil kosong, dan pesan error.
 - Cari dengan tombol Enter dan gunakan layout responsif di berbagai ukuran layar.
 
@@ -68,7 +68,7 @@ Frontend membaca daftar lagu dari `result` pada respons pencarian dan URL audio 
 
 - Browser harus dapat mengakses NexRay, Spotify Embed, dan CDN yang digunakan. Gangguan atau keterlambatan layanan eksternal dapat memengaruhi fitur terkait.
 - API dipanggil langsung dari browser, sehingga endpoint dapat dilihat pengguna. Jangan menaruh API key atau rahasia di file frontend.
-- URL unduhan diminta saat detail lagu dibuka dan disimpan sementara di memori browser selama lima menit.
+- URL unduhan hanya diminta setelah pengguna memilih Unduh Audio; URL disimpan sementara di memori browser selama lima menit.
 - Browser dapat membatasi autoplay; pengguna mungkin perlu menekan tombol Play pada player Spotify.
 - Unduh hanya konten yang berhak kamu akses. Musik dan merek Spotify adalah milik pemegang hak masing-masing.
 

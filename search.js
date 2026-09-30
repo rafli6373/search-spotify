@@ -60,7 +60,7 @@ async function searchViaNexray(query) {
 
   const results = Array.isArray(data.result) ? data.result : [];
 
-  return results.map((track, index) => {
+  const tracks = results.map((track, index) => {
     const rawTitle = track.title || 'Untitled';
     const artist = track.artist || 'Unknown Artist';
     const normalizedTitle = stripArtistPrefix(rawTitle, artist);
@@ -73,6 +73,8 @@ async function searchViaNexray(query) {
       genre: '-',
       duration: track.duration || '0:00',
       year: track.release_date ? new Date(track.release_date).getFullYear() : null,
+      popularity: Number(track.popularity) || 0,
+      variant: getTrackVariant(normalizedTitle, track.album || ''),
       thumbnail: track.thumbnail || '',
       previewUrl: null,
       spotifyUrl: track.url || null,
@@ -80,6 +82,61 @@ async function searchViaNexray(query) {
       rawTitle,
     };
   });
+
+  const rankedTracks = tracks.sort((left, right) => scoreTrack(right, query) - scoreTrack(left, query));
+  const seenTracks = new Set();
+
+  rankedTracks.forEach((track) => {
+    const key = `${normalizeSearchText(track.title)}|${normalizeSearchText(track.artist)}`;
+    if (seenTracks.has(key) && !track.variant) track.variant = 'Rilis lain';
+    seenTracks.add(key);
+  });
+
+  return rankedTracks;
+}
+
+function scoreTrack(track, query) {
+  const normalizedQuery = normalizeSearchText(query);
+  const normalizedTitle = normalizeSearchText(track.title);
+  const normalizedArtist = normalizeSearchText(track.artist);
+  const queryTokens = [...new Set(normalizedQuery.split(' ').filter(Boolean))];
+  const trackTokens = new Set(`${normalizedTitle} ${normalizedArtist}`.split(' '));
+  const matchedTokens = queryTokens.filter((token) => trackTokens.has(token)).length;
+
+  let score = track.popularity * 0.1 + matchedTokens * 100;
+  if (normalizedTitle === normalizedQuery) score += 1000;
+  else if (normalizedTitle.startsWith(normalizedQuery)) score += 500;
+  if (queryTokens.length > 0 && matchedTokens === queryTokens.length) score += 200;
+
+  return score;
+}
+
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+}
+
+function getTrackVariant(title, album) {
+  const description = `${title} ${album}`;
+  const variants = [
+    { pattern: /\blive\b/i, label: 'Live' },
+    { pattern: /\bacoustic\b/i, label: 'Akustik' },
+    { pattern: /\bremix\b/i, label: 'Remix' },
+    { pattern: /\binstrumental\b/i, label: 'Instrumental' },
+    { pattern: /\bpiano\b/i, label: 'Piano' },
+    { pattern: /\bkaraoke\b/i, label: 'Karaoke' },
+    { pattern: /\bcover\b/i, label: 'Cover' },
+    { pattern: /\bsped up\b/i, label: 'Sped Up' },
+    { pattern: /\bslowed\b/i, label: 'Slowed' },
+    { pattern: /\bremaster(?:ed)?\b/i, label: 'Remaster' },
+  ];
+  const variant = variants.find(({ pattern }) => pattern.test(description));
+
+  return variant ? variant.label : '';
 }
 
 // ─── Render Daftar Lagu ───────────────────────────────────────────────────────
@@ -109,6 +166,12 @@ function renderPlaylist(tracks) {
     artist.textContent = track.artist || 'Unknown Artist';
 
     info.append(title, artist);
+    if (track.variant) {
+      const variant = document.createElement('span');
+      variant.className = 'track-variant';
+      variant.textContent = track.variant;
+      info.appendChild(variant);
+    }
 
     const btn = document.createElement('button');
     btn.className = 'ml-3 flex-shrink-0 font-semibold text-black px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80 active:opacity-60 text-sm';
@@ -134,15 +197,14 @@ function showDetail(track) {
     spotifyUrl = null,
   } = track;
 
-  if (spotifyUrl) getDownloadUrl(spotifyUrl).catch(() => {});
-
   const spotifyTrackId = extractSpotifyTrackId(spotifyUrl);
   const previewHtml = spotifyTrackId
     ? `
       <div class="spotify-preview">
+        <div class="spotify-preview-state" role="status" aria-live="polite">Memuat preview Spotify...</div>
         <iframe
           class="spotify-embed"
-          src="https://open.spotify.com/embed/track/${spotifyTrackId}"
+          data-src="https://open.spotify.com/embed/track/${spotifyTrackId}"
           width="100%"
           height="80"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
@@ -185,6 +247,31 @@ function showDetail(track) {
       htmlContainer: 'spotify-modal-content',
       confirmButton: 'spotify-modal-confirm',
       cancelButton: 'spotify-modal-cancel',
+    },
+    didOpen: (popup) => {
+      const iframe = popup.querySelector('.spotify-embed');
+      const status = popup.querySelector('.spotify-preview-state');
+      if (!iframe || !status) return;
+
+      const timeout = window.setTimeout(() => {
+        if (!status.isConnected || iframe.dataset.loaded === 'true') return;
+        status.classList.add('is-error');
+        status.textContent = 'Preview belum muncul. Coba buka di Spotify.';
+      }, 12000);
+
+      iframe.addEventListener('load', () => {
+        iframe.dataset.loaded = 'true';
+        window.clearTimeout(timeout);
+        status.hidden = true;
+      }, { once: true });
+
+      iframe.addEventListener('error', () => {
+        window.clearTimeout(timeout);
+        status.classList.add('is-error');
+        status.textContent = 'Preview gagal dimuat. Coba buka di Spotify.';
+      }, { once: true });
+
+      iframe.src = iframe.dataset.src;
     },
   }).then((result) => {
     if (!result.isConfirmed) return;

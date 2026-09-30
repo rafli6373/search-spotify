@@ -719,6 +719,21 @@ body::after {
   color: var(--y2k-white);
 }
 
+#playlist .track-variant {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  margin-top: 0.3rem;
+  padding: 0.12rem 0.42rem;
+  border: 1px solid rgba(255, 85, 216, 0.32);
+  border-radius: 5px;
+  background: rgba(255, 85, 216, 0.12);
+  color: var(--y2k-cyan);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 #playlist > div button {
   border-radius: 8px;
   background: var(--y2k-lime);
@@ -769,6 +784,51 @@ body::after {
 
 .spotify-preview p {
   color: var(--y2k-cyan);
+}
+
+.spotify-preview {
+  position: relative;
+  min-height: 80px;
+}
+
+.spotify-preview-state {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(81, 232, 255, 0.32);
+  border-radius: 12px;
+  background: rgba(20, 24, 49, 0.98);
+  color: var(--y2k-cyan);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.spotify-preview-state[hidden] {
+  display: none;
+}
+
+.spotify-preview-state::before {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(81, 232, 255, 0.25);
+  border-top-color: var(--y2k-pink);
+  border-radius: 50%;
+  content: '';
+  animation: spin 0.8s linear infinite;
+}
+
+.spotify-preview-state.is-error {
+  color: var(--y2k-pink);
+}
+
+.spotify-preview-state.is-error::before {
+  display: none;
 }
 
 .spotify-modal-confirm,
