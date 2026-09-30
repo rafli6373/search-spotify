@@ -168,21 +168,12 @@ function showDetail(track) {
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Durasi</td><td>${escapeHtml(String(duration))}</td></tr>
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Tahun</td><td>${escapeHtml(String(year))}</td></tr>
       </table>
-      <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.12);display:flex;flex-direction:column;gap:8px;">
-        <a href="${escapeHtml(fullDownloadUrl)}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#1ED760;color:#000;padding:11px 16px;border-radius:10px;font-size:0.92rem;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(30,215,96,0.35);transition:0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-          ⚡ Download Lagu Penuh (Full MP3) ↗
-        </a>
-        <p style="font-size:0.75rem;color:rgba(255,255,255,0.45);text-align:center;margin:0;">
-          Unduh versi durasi penuh 320kbps gratis
-        </p>
-      </div>
     `,
     showCancelButton:   true,
-    confirmButtonColor: 'rgba(255,255,255,0.12)',
+    confirmButtonColor: '#1ED760',
     cancelButtonColor:  'rgba(255,255,255,0.16)',
-    confirmButtonText:  '⬇ Download Preview (30 detik)',
+    confirmButtonText:  '⬇ Unduh Audio',
     cancelButtonText:   'Tutup',
-    showConfirmButton:  !!previewUrl,
     customClass: {
       popup:         'spotify-modal',
       title:         'spotify-modal-title',
@@ -192,39 +183,46 @@ function showDetail(track) {
     },
   }).then((result) => {
     if (!result.isConfirmed) return;
-    if (previewUrl) {
-      triggerDownload(previewUrl, `${sanitizeFilename(artist)} - ${sanitizeFilename(title)} (Preview).m4a`);
-      showToast('success', 'Download preview dimulai!');
-    }
+    downloadSong(title, artist, previewUrl);
   });
 }
 
-// ─── Download Full MP3 via Backend ───────────────────────────────────────────
-async function downloadFullMP3(title, artist) {
-  showToast('info', '⏳ Menyiapkan MP3... Mohon tunggu 10-20 detik.');
+// ─── Download Handler Langsung (Tanpa Iklan / Captcha) ───────────────────────
+async function downloadSong(title, artist, previewUrl) {
+  showToast('info', '⏳ Memproses unduhan audio...');
   setLoading(true);
+
   try {
+    // 1. Coba download lagu penuh dari backend jika aktif
     const params = new URLSearchParams({ title, artist });
     const resp = await fetchWithTimeout(
       `${BACKEND}/api/download?${params.toString()}`,
       {},
-      90000   // download bisa butuh waktu proses convert
+      60000
     );
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error || `HTTP ${resp.status}`);
+
+    if (resp.ok) {
+      const blob     = await resp.blob();
+      const filename = `${sanitizeFilename(artist)} - ${sanitizeFilename(title)}.mp3`;
+      const blobUrl  = URL.createObjectURL(blob);
+      triggerDownload(blobUrl, filename);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+      showToast('success', `✅ Unduhan selesai: ${filename}`);
+      return;
     }
-    const blob     = await resp.blob();
-    const filename = `${sanitizeFilename(artist)} - ${sanitizeFilename(title)}.mp3`;
-    const blobUrl  = URL.createObjectURL(blob);
-    triggerDownload(blobUrl, filename);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-    showToast('success', `✅ Download selesai: ${filename}`);
   } catch (err) {
-    console.error('[Download MP3]', err);
-    showToast('error', `Gagal download: ${err.message}`);
+    console.warn('[Backend download tidak merespons, beralih ke preview audio]', err.message);
   } finally {
     setLoading(false);
+  }
+
+  // 2. Jika backend offline, unduh audio preview kualitas tinggi secara instan
+  if (previewUrl) {
+    const filename = `${sanitizeFilename(artist)} - ${sanitizeFilename(title)} (Cuplikan).m4a`;
+    triggerDownload(previewUrl, filename);
+    showToast('success', `✅ Mengunduh cuplikan audio jernih: ${filename}`);
+  } else {
+    showToast('error', 'Audio tidak tersedia untuk diunduh.');
   }
 }
 

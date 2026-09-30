@@ -7,6 +7,8 @@ const fetch        = require('node-fetch');
 const ffmpegStatic = require('ffmpeg-static');
 const ffmpeg       = require('fluent-ffmpeg');
 
+const { execFile }  = require('child_process');
+
 if (ffmpegStatic) {
   ffmpeg.setFfmpegPath(ffmpegStatic);
 }
@@ -17,6 +19,7 @@ const PORT = process.env.PORT || 3001;
 const DOWNLOAD_DIR = path.join(os.tmpdir(), 'spotify-dl');
 if (!fs.existsSync(DOWNLOAD_DIR)) fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
 
+const YT_DLP_PATH = path.join(__dirname, 'bin', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
 const FRONTEND_DIR = path.resolve(__dirname, '..');
 
 app.use(cors());
@@ -60,6 +63,63 @@ app.get('/api/search', async (req, res) => {
     console.error('[/api/search]', err.message);
     res.status(500).json({ error: 'Gagal mengambil data pencarian.', detail: err.message });
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/download?title=<judul>&artist=<artis>
+// Download Full MP3 durasi penuh via yt-dlp + ffmpeg — 100% gratis
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/download', (req, res) => {
+  const title  = String(req.query.title  || '').trim();
+  const artist = String(req.query.artist || '').trim();
+
+  if (!title) return res.status(400).json({ error: 'Parameter title wajib diisi.' });
+
+  const query      = artist ? `${artist} - ${title}` : title;
+  const safeName   = sanitizeFilename(`${artist || 'Unknown'} - ${title}.mp3`);
+  const outputPath = path.join(DOWNLOAD_DIR, `${Date.now()}_${safeName}`);
+
+  console.log(`[Download] Memulai pencarian & download audio: "${query}"`);
+
+  const args = [
+    '-x',
+    '--audio-format', 'mp3',
+    '--audio-quality', '0',
+    '--no-playlist',
+    `ytsearch1:${query}`,
+    '-o', outputPath
+  ];
+
+  if (ffmpegStatic) {
+    args.push('--ffmpeg-location', ffmpegStatic);
+  }
+
+  // Jika user menaruh cookies.txt di server/cookies.txt
+  const cookiesPath = path.join(__dirname, 'cookies.txt');
+  if (fs.existsSync(cookiesPath)) {
+    args.push('--cookies', cookiesPath);
+  }
+
+  execFile(YT_DLP_PATH, args, (error, stdout, stderr) => {
+    if (error) {
+      console.error('[yt-dlp error]', stderr || error.message);
+      return res.status(500).json({ error: 'Gagal mendownload lagu.', detail: error.message });
+    }
+
+    if (!fs.existsSync(outputPath)) {
+      console.error('[Download] File MP3 tidak ditemukan:', outputPath);
+      return res.status(500).json({ error: 'File audio gagal diproses.' });
+    }
+
+    console.log(`[Download] Selesai! Mengirim file: ${safeName}`);
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeName)}"`);
+
+    const stream = fs.createReadStream(outputPath);
+    stream.pipe(res);
+    stream.on('end', () => fs.unlink(outputPath, () => {}));
+    stream.on('error', () => { if (!res.headersSent) res.status(500).end(); });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
