@@ -2,6 +2,7 @@
 const SEARCH_API    = 'https://api.nexray.eu.cc/search/spotify';
 const DOWNLOAD_API  = 'https://api.nexray.eu.cc/downloader/spotify';
 const TIMEOUT_MS    = 20000;
+const DOWNLOAD_URL_CACHE_TTL_MS = 5 * 60 * 1000;
 
 // ─── Elemen DOM ──────────────────────────────────────────────────────────────
 const fetchButton = document.getElementById('fetchButton');
@@ -10,6 +11,7 @@ const urlInput    = document.getElementById('urlInput');
 const loadingDiv  = document.getElementById('loading');
 
 let requestInProgress = false;
+const downloadUrlCache = new Map();
 
 // ─── Event Listeners ─────────────────────────────────────────────────────────
 fetchButton.addEventListener('click', searchMusic);
@@ -132,6 +134,8 @@ function showDetail(track) {
     spotifyUrl = null,
   } = track;
 
+  if (spotifyUrl) getDownloadUrl(spotifyUrl).catch(() => {});
+
   const spotifyTrackId = extractSpotifyTrackId(spotifyUrl);
   const previewHtml = spotifyTrackId
     ? `
@@ -201,17 +205,7 @@ async function downloadSong(track) {
   setLoading(true);
 
   try {
-    const params = new URLSearchParams({ url: spotifyUrl });
-    const resp = await fetchWithTimeout(`${DOWNLOAD_API}?${params.toString()}`, {}, 60000);
-    if (!resp.ok) throw new Error(`Download HTTP ${resp.status}`);
-
-    const data = await resp.json();
-    const audioUrl = data?.result?.url || data?.url || null;
-
-    if (!audioUrl) {
-      throw new Error('URL hasil download tidak ditemukan.');
-    }
-
+    const audioUrl = await getDownloadUrl(spotifyUrl);
     const filename = `${sanitizeFilename(track.artist || 'Unknown')} - ${sanitizeFilename(track.title || 'Track')}.mp3`;
     triggerDownload(audioUrl, filename);
     showToast('success', `✅ Unduhan selesai: ${filename}`);
@@ -221,6 +215,35 @@ async function downloadSong(track) {
   } finally {
     setLoading(false);
   }
+}
+
+function getDownloadUrl(spotifyUrl) {
+  if (!spotifyUrl) return Promise.reject(new Error('URL Spotify tidak tersedia.'));
+
+  const cached = downloadUrlCache.get(spotifyUrl);
+  if (cached && Date.now() - cached.createdAt < DOWNLOAD_URL_CACHE_TTL_MS) {
+    return cached.promise;
+  }
+
+  const params = new URLSearchParams({ url: spotifyUrl });
+  const promise = fetchWithTimeout(`${DOWNLOAD_API}?${params.toString()}`, {}, 60000)
+    .then(async (resp) => {
+      if (!resp.ok) throw new Error(`Download HTTP ${resp.status}`);
+
+      const data = await resp.json();
+      const audioUrl = data?.result?.url || data?.url || null;
+      if (!audioUrl) throw new Error('URL hasil download tidak ditemukan.');
+      return audioUrl;
+    });
+
+  downloadUrlCache.set(spotifyUrl, { promise, createdAt: Date.now() });
+  promise.catch(() => {
+    if (downloadUrlCache.get(spotifyUrl)?.promise === promise) {
+      downloadUrlCache.delete(spotifyUrl);
+    }
+  });
+
+  return promise;
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
