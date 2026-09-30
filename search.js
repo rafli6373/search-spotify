@@ -133,6 +133,22 @@ function showDetail(track) {
     spotifyUrl = null,
   } = track;
 
+  const spotifyTrackId = extractSpotifyTrackId(spotifyUrl);
+  const previewHtml = spotifyTrackId
+    ? `
+      <div class="spotify-preview">
+        <iframe
+          class="spotify-embed"
+          src="https://open.spotify.com/embed/track/${spotifyTrackId}"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="Spotify preview for ${escapeHtml(title)}">
+        </iframe>
+      </div>
+      `
+    : `<p class="spotify-preview" style="font-size:0.82rem;color:rgba(255,255,255,0.45);text-align:center;">Preview tidak tersedia.</p>`;
+
   const spotifyLink = spotifyUrl
     ? `<p style="margin:10px 0 12px; text-align:center;">
          <a href="${escapeHtml(spotifyUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:8px 14px;border-radius:999px;background:rgba(30,215,96,0.12);color:#1ED760;text-decoration:none;font-weight:600;">
@@ -145,6 +161,7 @@ function showDetail(track) {
     title: escapeHtml(title),
     html: `
       ${thumbnail ? `<img src="${escapeHtml(thumbnail)}" alt="${escapeHtml(title)}" class="mb-3">` : ''}
+      ${previewHtml}
       ${spotifyLink}
       <table style="width:100%;text-align:left;font-size:0.85rem;border-collapse:collapse;margin-top:8px;">
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;white-space:nowrap;">Artis</td><td>${escapeHtml(artist)}</td></tr>
@@ -170,6 +187,7 @@ function showDetail(track) {
     downloadSong(track);
   });
 }
+
 
 // ─── Download via NexRay Downloader API ───────────────────────────────────────
 async function downloadSong(track) {
@@ -248,6 +266,12 @@ function escapeHtml(str) {
 
 function sanitizeFilename(str) {
   return String(str ?? 'track').replace(/[\\/?:*|<>]/g, '-').replace(/\s+/g, ' ').trim();
+}
+
+function extractSpotifyTrackId(url) {
+  if (!url) return null;
+  const match = String(url).match(/track[\/:]([A-Za-z0-9]+)/i);
+  return match ? match[1] : null;
 }
 
 function stripArtistPrefix(title, artist) {

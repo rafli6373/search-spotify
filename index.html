@@ -25,8 +25,13 @@
 <body class="flex items-center justify-center">
 	<div class="app-shell w-full max-w-2xl p-4 sm:p-6 md:p-8 rounded-lg shadow-lg mt-4 mb-4 sm:mt-6 sm:mb-6">
       <div class="logo mb-4">
-				<img src="https://cdn.simpleicons.org/spotify/1ED760" alt="Spotify logo">
-        <h1 class="text-2xl font-semibold text-white">Spotify Search</h1>
+				<div class="logo-mark">
+          <img src="https://cdn.simpleicons.org/spotify/1ED760" alt="Spotify logo">
+        </div>
+        <div class="logo-copy">
+          <h1 class="text-2xl font-semibold text-white">Spotify Search</h1>
+          <span class="logo-tag">Music discovery</span>
+        </div>
       </div>
 	<div class="search-bar flex mb-2">
         <input id="urlInput" type="text" class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 mr-2" placeholder="Enter Spotify Music Title" aria-label="Search Spotify music" autocomplete="off" maxlength="100">
@@ -36,7 +41,7 @@
   </svg>
         </button>
       </div>
-      <p class="text-xs mb-3" style="color:rgba(255,255,255,0.45);">Tekan Enter atau klik tombol untuk mencari</p>
+      <p class="text-xs mb-3 prompt-text">Tekan Enter atau klik tombol untuk mencari</p>
       <div id="playlist" class="hidden" role="list" aria-label="Hasil pencarian lagu"></div>
       <div id="loading" class="hidden text-gray-400 mt-4">
         <div class="spinner"></div>
