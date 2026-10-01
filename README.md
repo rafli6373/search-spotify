@@ -24,16 +24,6 @@ Aplikasi web bertema Y2K Mixtape untuk mencari lagu, melihat detail, memutar pre
 └── image.png    # Favicon
 ```
 
-## Menjalankan Lokal
-
-Untuk mencoba pencarian saja, jalankan server statis dari folder proyek:
-
-```bash
-python -m http.server 8000
-```
-
-Kemudian buka <http://localhost:8000> di browser. Alternatifnya, gunakan server statis seperti `npx serve .`.
-
 ## Konfigurasi Turnstile
 
 Deployment unduhan harus menggunakan Vercel agar function di `api/download.js` aktif. Tambahkan environment variable berikut di Vercel:
