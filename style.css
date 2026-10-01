@@ -768,12 +768,23 @@ body::after {
 .spotify-modal-content table {
   width: min(100%, 300px) !important;
   margin: 12px auto 0 !important;
-  text-align: center !important;
+  text-align: left !important;
+  table-layout: fixed;
 }
 
 .spotify-modal-content td {
   padding: 4px 8px !important;
-  text-align: center !important;
+  text-align: left !important;
+}
+
+.spotify-modal-content td:first-child {
+  width: 5.5rem;
+  white-space: nowrap;
+}
+
+.spotify-modal-content td:last-child {
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .spotify-modal-content img {
