@@ -308,6 +308,17 @@ button {
   background: #22263d;
 }
 
+.turnstile-slot {
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+  margin: 0.75rem auto 0;
+}
+
+.turnstile-slot:not([hidden]) {
+  min-height: 65px;
+}
+
 .spotify-preview p {
   margin: 0;
   color: #c6f7d1;

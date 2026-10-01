@@ -1,6 +1,6 @@
 # Spotify Search
 
-Aplikasi web statis bertema Y2K Mixtape untuk mencari lagu, melihat detail, memutar preview Spotify, dan meminta URL unduhan melalui NexRay. Repo ini tidak membutuhkan backend atau proses build.
+Aplikasi web bertema Y2K Mixtape untuk mencari lagu, melihat detail, memutar preview Spotify, dan meminta URL unduhan melalui NexRay. Pencarian dapat berjalan dari halaman statis, tetapi fitur unduhan membutuhkan Vercel Function di `api/download.js`.
 
 **Live demo:** [search-sporify.vercel.app](https://search-sporify.vercel.app/)
 
@@ -9,7 +9,7 @@ Aplikasi web statis bertema Y2K Mixtape untuk mencari lagu, melihat detail, memu
 - Cari lagu berdasarkan judul atau nama artis.
 - Lihat cover, artis, album, durasi, dan tahun rilis.
 - Putar preview melalui Spotify Embed.
-- Minta URL unduhan hanya setelah tombol Unduh Audio dipilih; hasilnya disimpan sementara selama lima menit.
+- Minta URL unduhan hanya setelah tombol Unduh Audio dipilih, dengan verifikasi Cloudflare Turnstile dan rate limit satu detik.
 - Tampilkan status loading, hasil kosong, dan pesan error.
 - Cari dengan tombol Enter dan gunakan layout responsif di berbagai ukuran layar.
 
@@ -18,6 +18,7 @@ Aplikasi web statis bertema Y2K Mixtape untuk mencari lagu, melihat detail, memu
 ```text
 .
 ├── index.html   # Halaman dan dependensi CDN
+├── api/download.js # Verifikasi Turnstile dan proxy download
 ├── search.js    # Pencarian, detail, preview, dan unduhan
 ├── style.css    # Tema Y2K Mixtape dan layout responsif
 └── image.png    # Favicon
@@ -25,13 +26,23 @@ Aplikasi web statis bertema Y2K Mixtape untuk mencari lagu, melihat detail, memu
 
 ## Menjalankan Lokal
 
-Tidak perlu instalasi dependensi atau build. Jalankan server statis dari folder proyek:
+Untuk mencoba pencarian saja, jalankan server statis dari folder proyek:
 
 ```bash
 python -m http.server 8000
 ```
 
 Kemudian buka <http://localhost:8000> di browser. Alternatifnya, gunakan server statis seperti `npx serve .`.
+
+## Konfigurasi Turnstile
+
+Deployment unduhan harus menggunakan Vercel agar function di `api/download.js` aktif. Tambahkan environment variable berikut di Vercel:
+
+```text
+TURNSTILE_SECRET_KEY=<Secret Key dari Cloudflare Turnstile>
+```
+
+Site Key memang digunakan di frontend dan boleh terlihat oleh pengguna. Secret Key hanya boleh disimpan sebagai environment variable. Setelah menambahkan atau mengganti variable, lakukan redeploy.
 
 ## Teknologi
 

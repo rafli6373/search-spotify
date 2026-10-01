@@ -1,6 +1,7 @@
 // ─── Konfigurasi API NexRay ───────────────────────────────────────────────────
 const SEARCH_API    = 'https://api.nexray.eu.cc/search/spotify';
-const DOWNLOAD_API  = 'https://api.nexray.eu.cc/downloader/spotify';
+const DOWNLOAD_API  = '/api/download';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAAFKZcorzo9BjDWG';
 const TIMEOUT_MS    = 20000;
 const DOWNLOAD_URL_CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -224,11 +225,15 @@ function showDetail(track) {
        </p>`
     : '';
 
+  let turnstileWidgetId = null;
+  let turnstileToken = null;
+
   Swal.fire({
     title: escapeHtml(title),
     html: `
       ${previewHtml}
       ${spotifyLink}
+      <div class="turnstile-slot" hidden></div>
       <table style="width:100%;text-align:left;font-size:0.85rem;border-collapse:collapse;margin-top:8px;">
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;white-space:nowrap;">Artis</td><td>${escapeHtml(artist)}</td></tr>
         <tr><td style="color:rgba(255,255,255,0.5);padding:3px 10px 3px 0;">Album</td><td>${escapeHtml(album)}</td></tr>
@@ -247,6 +252,36 @@ function showDetail(track) {
       htmlContainer: 'spotify-modal-content',
       confirmButton: 'spotify-modal-confirm',
       cancelButton: 'spotify-modal-cancel',
+    },
+    preConfirm: () => {
+      const popup = Swal.getPopup();
+      const slot = popup?.querySelector('.turnstile-slot');
+      if (!slot) return Promise.reject(new Error('Turnstile tidak tersedia.'));
+      if (turnstileToken) return turnstileToken;
+      if (!window.turnstile) {
+        Swal.showValidationMessage('Turnstile belum siap. Coba lagi.');
+        return false;
+      }
+
+      slot.hidden = false;
+      return new Promise((resolve, reject) => {
+        turnstileWidgetId = window.turnstile.render(slot, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token) => {
+            turnstileToken = token;
+            resolve(token);
+          },
+          'expired-callback': () => {
+            turnstileToken = null;
+            Swal.showValidationMessage('Verifikasi kedaluwarsa. Silakan coba lagi.');
+            reject(new Error('Turnstile token expired.'));
+          },
+          'error-callback': () => {
+            Swal.showValidationMessage('Verifikasi Turnstile gagal. Silakan coba lagi.');
+            reject(new Error('Turnstile verification failed.'));
+          },
+        });
+      });
     },
     didOpen: (popup) => {
       const iframe = popup.querySelector('.spotify-embed');
@@ -275,16 +310,20 @@ function showDetail(track) {
     },
   }).then((result) => {
     if (!result.isConfirmed) return;
-    downloadSong(track);
+    downloadSong(track, result.value);
   });
 }
 
 
 // ─── Download via NexRay Downloader API ───────────────────────────────────────
-async function downloadSong(track) {
+async function downloadSong(track, turnstileToken) {
   const spotifyUrl = track.spotifyUrl || track.trackViewUrl || null;
   if (!spotifyUrl) {
     showToast('error', 'URL Spotify tidak tersedia untuk diunduh.');
+    return;
+  }
+  if (!turnstileToken) {
+    showToast('error', 'Verifikasi Turnstile diperlukan sebelum mengunduh.');
     return;
   }
 
@@ -292,7 +331,7 @@ async function downloadSong(track) {
   setLoading(true);
 
   try {
-    const audioUrl = await getDownloadUrl(spotifyUrl);
+    const audioUrl = await getDownloadUrl(spotifyUrl, turnstileToken);
     const filename = `${sanitizeFilename(track.artist || 'Unknown')} - ${sanitizeFilename(track.title || 'Track')}.mp3`;
     triggerDownload(audioUrl, filename);
     showToast('success', `✅ Unduhan selesai: ${filename}`);
@@ -304,7 +343,7 @@ async function downloadSong(track) {
   }
 }
 
-function getDownloadUrl(spotifyUrl) {
+function getDownloadUrl(spotifyUrl, turnstileToken) {
   if (!spotifyUrl) return Promise.reject(new Error('URL Spotify tidak tersedia.'));
 
   const cached = downloadUrlCache.get(spotifyUrl);
@@ -312,8 +351,11 @@ function getDownloadUrl(spotifyUrl) {
     return cached.promise;
   }
 
-  const params = new URLSearchParams({ url: spotifyUrl });
-  const promise = fetchWithTimeout(`${DOWNLOAD_API}?${params.toString()}`, {}, 60000)
+  const promise = fetchWithTimeout(DOWNLOAD_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ spotifyUrl, turnstileToken }),
+  }, 60000)
     .then(async (resp) => {
       if (!resp.ok) throw new Error(`Download HTTP ${resp.status}`);
 
