@@ -2,7 +2,7 @@
 
 Aplikasi web bertema Y2K Mixtape untuk mencari lagu, melihat detail, memutar preview Spotify, dan meminta URL unduhan melalui NexRay. Pencarian dapat berjalan dari halaman statis, tetapi fitur unduhan membutuhkan Vercel Function di `api/download.js`.
 
-**Live demo:** [search-sporify.vercel.app](https://search-sporify.vercel.app/)
+**Live demo:** [https://www.paymira.my.id](https://www.paymira.my.id)
 
 ## Fitur
 
