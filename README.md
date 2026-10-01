@@ -34,6 +34,8 @@ TURNSTILE_SECRET_KEY=<Secret Key dari Cloudflare Turnstile>
 
 Site Key memang digunakan di frontend dan boleh terlihat oleh pengguna. Secret Key hanya boleh disimpan sebagai environment variable. Setelah menambahkan atau mengganti variable, lakukan redeploy.
 
+Untuk domain kustom, tambahkan hostname situs ke `TURNSTILE_ALLOWED_HOSTNAMES`. Pisahkan beberapa hostname dengan koma, tanpa skema `https://`. Hostname deployment produksi dan preview Vercel juga dikenali dari environment variable bawaan Vercel.
+
 ## Teknologi
 
 - HTML, CSS, dan vanilla JavaScript

@@ -267,6 +267,7 @@ function showDetail(track) {
       return new Promise((resolve, reject) => {
         turnstileWidgetId = window.turnstile.render(slot, {
           sitekey: TURNSTILE_SITE_KEY,
+          action: 'download',
           callback: (token) => {
             turnstileToken = token;
             resolve(token);
